@@ -1,11 +1,13 @@
+;;;;;;;;;;;;;;;;;;;;;MUST CREATE access.log FILE IN THE SAME DIRECTORY BEFORE RUNNING;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 .model	small
 .stack 64
-
+;;;TODO:3. buy shirt wrong calculation
 .data 
-	fname db 'access.log', 0
-	fhandle dw ?,0
+	fname db 'access.log$'
+	fhandle dw ?,'$'
     msg db 13,10,'Enter the data $'
-    buffer db 100 dup('$')
+    buffer db 50 dup('$')
    ; username db 100 dup('$')
 
     hr db 13,10,' -----------------------------------------$'   
@@ -32,14 +34,14 @@
     mainMenu4 db 13,10,'| 0.LOGOUT                                |$'
     mainMenu5 db 13,10,'| 1.DONATION                              |$' 
     mainMenu6 db 13,10,'| 2.BUY SOCIETY SHIRT                     |$' 
-    mainMenu7 db 13,10,'| 3.CALCULATE RETURN ON INVESTMENT        |$' 
+    mainMenu7 db 13,10,'| 3.PROFIT CALCULATOR                     |$' 
     choicePrompt db 13,10,'PLEASE ENTER YOUR CHOICE:$'
     choice db ? , "$"
         
     donateMsg db 13,10,'YOU WILL EARN 1 POINT FOR EVERY RM5 OF DONATION$'
     donateMsg2 db 13,10,'PLEASE ENTER YOUR AMOUNT OF DONATION (RM):$'
     donation db ?,"$"
-        shirtTotal db ?,"$"
+        shirtTotal dw ?
 
     points db ?,"$" 
 
@@ -50,12 +52,40 @@
     valuePerPoint db 5
     
         buyMsg1 db 13,10,'EVERY SHIRT COSTS RM$'
-        pricePerShirt db 9
-    buyMsg2 db 13,10,'PLEASE ENTER QUANTITY (MAX 9):$'
+        pricePerShirt db 90,'$'
+    buyMsg2 db 13,10,'PLEASE ENTER QUANTITY (MAX 99):$'
+	processingFeePercentage dw 6
+	PFPDigit db "6"
+	processingFee dw 0
+	processingFeeFP dw 0
     shirtQuantity db ?,"$" 
+	shirtTotalWithPF dw 0
+	sq1 db 0
+	sr1 dw 0
+	sq2 db 0
+	sr2 db 0
+	sq3 db 0
+	sr3 db 0
+	sq4 db 0
+	sr4 db 0
+	
+	;; for total
+	stq1 db 0
+	str1 dw 0
+	stq2 db 0
+	str2 db 0
+	stq3 db 0
+	str3 db 0
+	stq4 db 0
+	str4 db 0
+	
+	
 
-    buyMsg3 db 13,10,'THANKS FOR BUYING! IT WILL COST YOU RM$'
-    buyMsg4 db '! PLEASE PAY THIS AMOUNT TO THE BURSARY.$'
+    buyMsg3 db 13,10,'COST OF SHIRT: RM$'
+    buyMsg4 db 13,10,'PROCESSING FEE ($'
+    buyMsg5 db '%): RM$'
+    buyMsg6 db 13,10,'THANKS FOR BUYING! IT WILL COST YOU RM$'
+    buyMsg7 db 'IN TOTAL! PLEASE PAY THIS AMOUNT TO THE BURSARY.$'
 
    
     roiMsg1 db 13,10,'ENTER YOUR INVESTMENT GAIN (RM0 - RM10000):$'
@@ -67,11 +97,73 @@
     errorMsg db 13,10,'INVALID CHOICE! PLEASE TYPE AGAIN!$'
     exitMsg db 13,10,'BYE!$'
     hundred db 100
+    hundredDw dw 100
     roi db ?
     array LABEL BYTE
-    max db 50
-    act db ?
+    nameArrayMax db 50
+    nameArrayAct db ?
     nameArrayData db 50 dup('$')
+	MSG1 db 13,10,"ENTER QUANTITY (UNIT)--> $"
+	MSG2 db 13,10,"ENTER COST PER UNIT --> RM$"
+	MSG3 db 13,10,"ENTER RETAIL PRICE PER UNIT --> RM$"
+	MSG4 db 13,10,13,10,"THE TOTAL COST = RM$"
+	MSG5 db 13,10,"THE TOTAL RETAIL PRICE = RM$"
+	MSG6 db 13,10,13,10,"THE PROFIT = RM$"
+	MSG7 db 13,10,13,10,"THE TOTAL LOST = -RM$"
+	ERROR db 13,10,"INVALID INPUT! PLEASE ENTER A NUMBER..$"
+    
+	loginMessage1 db 13,10,"LOGGED IN SUCCESSFULLY AT $"
+	;loginMessage2 db 13,10," by$"
+
+	quantity	label	byte
+	max			db		3
+	act			db		0
+	qtydata		db		3 dup ("$")
+
+	shirt	label	byte
+	shirtMax			db		3
+	shirtAct			db		0
+	shirtData		db		3 dup ("$")
+
+shirt_digit db 0
+	shirt1 db 0
+	shirt2 db 0
+
+	digit db 0
+	QTY db 0
+	cost db 0
+	price db 0
+	TTL_cost dw 0
+	TTL_price dw 0
+	PROFIT dw 0
+	LOST dw 0
+	TEN db 10
+	cQ1 db 0
+	cR1 db 0
+	cQ2 db 0
+	cR2 db 0
+	QTY1 db 0
+	QTY2 db 0
+	pQ1 db 0
+	pR1 db 0
+	pQ2 db 0
+	pR2 db 0
+	nQ1 db 0
+	nR1 db 0
+	nQ2 db 0
+	nR2 db 0
+	lQ1 db 0
+	lR1 db 0
+	lQ2 db 0
+	lR2 db 0
+	thousand dw 1000
+	
+	pfq1 db 0
+	pfr1 dw 0
+	pfq2 db 0
+	pfr2 db 0 
+	pfq3 db 0
+	pfr3 db 0 
 
 .code
 main PROC
@@ -80,6 +172,12 @@ main PROC
 	mov ds, ax
 
 welcomePage:
+
+mov ax, 0
+mov bx, 0
+mov cx, 0
+xor dx, dx
+
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, welcomeScreen
@@ -161,7 +259,7 @@ namePage:
     jmp input
 ; input
 input:
- ; DISPLAY STRING
+ ; INPUT STRING
 mov ah, 0ah
 lea dx, array
 int 21h
@@ -212,19 +310,21 @@ adminPage:
         inc si
         loop validatepassword
 
-    mov cx,act
+    mov cx,5
     emptyNameArr:
     mov di, 0
     mov di, cx
     sub di,1
-    mov [namearrayData][di], 0
+    mov [namearrayData][di], "$"
     loop emptyNameArr
 
- ;   mov [namearraydata][0],"a"
-   ; mov [namearraydata][1],"d"
-  ;  mov [namearraydata][2],"m"
-    ;mov [namearraydata][3],"i"
-    ;mov [namearraydata][4],"n"
+    mov [namearraydata][0],"a"
+    mov [namearraydata][1],"d"
+    mov [namearraydata][2],"m"
+    mov [namearraydata][3],"i"
+    mov [namearraydata][4],"n"
+        mov [namearraydata][5],13
+	mov [[nameArrayAct]], 5
     jmp page2
 
 jumpToExit:
@@ -241,6 +341,85 @@ jumpToWelcomePage2:
    
     
 page2:
+; NEW LINE
+mov ah, 02h
+mov dl, 0dh
+int 21h
+mov dl, 0ah
+int 21h
+  mov ah, 09h
+    lea dx, [[loginmessage1]]
+    int 21h
+;Day Part
+DAY:
+MOV AH,2AH    ; To get System Date
+INT 21H
+MOV AL,DL     ; Day is in DL
+AAM
+MOV BX,AX
+CALL DISP
+
+MOV DL,'/'
+MOV AH,02H    ; To Print / in DOS
+INT 21H
+
+;Month Part
+MONTH:
+MOV AH,2AH    ; To get System Date
+INT 21H
+MOV AL,DH     ; Month is in DH
+AAM
+MOV BX,AX
+CALL DISP
+
+MOV DL,'/'    ; To Print / in DOS
+MOV AH,02H
+INT 21H
+
+;Year Part
+YEAR:
+MOV AH,2AH    ; To get System Date
+INT 21H
+ADD CX,0F830H ; To negate the effects of 16bit value,
+MOV AX,CX     ; since AAM is applicable only for AL (YYYY -> YY)
+AAM
+MOV BX,AX
+CALL DISP
+;Hour Part
+HOUR:
+MOV AH,2CH    ; To get System Time
+INT 21H
+MOV AL,CH     ; Hour is in CH
+AAM
+MOV BX,AX
+CALL DISP
+
+MOV DL,':'
+MOV AH,02H    ; To Print : in DOS
+INT 21H
+
+;Minutes Part
+MINUTES:
+MOV AH,2CH    ; To get System Time
+INT 21H
+MOV AL,CL     ; Minutes is in CL
+AAM
+MOV BX,AX
+CALL DISP
+
+MOV DL,':'    ; To Print : in DOS
+MOV AH,02H
+INT 21H
+
+;Seconds Part
+Seconds:
+MOV AH,2CH    ; To get System Time
+INT 21H
+MOV AL,DH     ; Seconds is in DH
+AAM
+MOV BX,AX
+CALL DISP
+
 ;;;;;; FILE HANDLING;;;;;;;
 ; CREATE A NEW FILE
 
@@ -250,33 +429,61 @@ page2:
 ;int 21h
 ;jc if_error
 ;mov fhandle, ax
-
+ 
  ;Open an existing file
 mov ah, 3dh
 lea dx, fname
 mov al, 2 ;(0 for readonly, 1 for writing, 2 for read and write)
 int 21h
 mov fhandle, ax
+
+;READ
+
+  mov ah, 3fh
+    lea dx, buffer
+    mov cx, 50 ; number of characters to read
+    mov bx, fhandle
+    int 21h
+	; display string
+   ; lea dx, [loginmessage1]
+   ; mov ah, 09h
+ ;   int 21h
+    ; display string
+ ;   lea dx, buffer
+   ; mov ah, 09h
+    ;int 21h
 ; input
 mov si, 0
+mov cx, 0
 inputFile:
-;mov ah, 01h
+;mov ah, 01h    
 ;int 21h
-cmp [namearraydata][si], '$'
+mov al, [[namearrayact]]
+cmp cx, ax
 je writeFile
 
+
 mov al, [namearraydata][si]
+  
 mov buffer[si], al
- 
+
+    
 inc si
-;inc cx
+inc cx
 jmp inputFile
 
 writeFile:
-; Write text
-mov dx,0
-mov bx, 0
 mov ax,0
+mov al, namearrayact
+mov si,ax
+mov al, 13
+mov buffer[si], al
+inc cx
+  ; DISPLAY BYTE
+   ; mov ah, 02h 
+    ;mov dl, buffer[0]
+    ;int 21h
+; Write text
 mov ah, 40h
 mov bx, fhandle
 lea dx, buffer
@@ -286,7 +493,6 @@ mov ah, 3eh
 mov bx, fhandle
 int 21h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ; NEW LINE
 mov ah, 02h
 mov dl, 0dh
@@ -299,15 +505,29 @@ lea dx, mainMenu2
 int 21h
 ; DISPLAY STRING
 
+mov si,0
+displayName:
+;mov al, [namearrayact]
+cmp [namearraydata][si], 13
+je afterdisplayname
  ; DISPLAY BYTE
+mov ah, 02h
+mov dl, [namearraydata][si]
+int 21h
+
+inc si
+jmp displayName
+
+; DISPLAY BYTE
 ;mov ah, 09h
 ;lea dx, [namearraydata]
 ;int 21h
 
+afterDisplayName:
 ; DISPLAY STRING
-;mov ah, 09h
-;lea dx, mainMenu3
-;int 21h
+mov ah, 09h
+lea dx, mainMenu3
+int 21h
  ; NEW LINE
 mov ah, 02h
 mov dl, 0dh
@@ -371,15 +591,15 @@ cmp choice, 1
 je donatePage
 
 cmp choice, 3
-je jumptoroipage
+je jumptocalprofitpage
 
 
 
 cmp choice, 0
 je jumptowelcomepage
-jne errorpage
 cmp choice, 2
 je buyShirtPage
+jne errorpage
 
     
 
@@ -391,21 +611,8 @@ je buyShirtPage
 
 
 
-; READ
 
-  ;  mov ah, 3fh
-  ;  lea dx, buffer
-  ;  mov cx, 400 ; number of characters to read
-  ;  mov bx, fhandle
-   ; int 21h
-    ; display string
-    ;lea dx, buffer
-   ; mov ah, 09h
-    ;int 21h
-    ; DISPLAY BYTE
-    ;mov ah, 02h 
-    ;mov dl, buffer[102]
-    ;int 21h
+   
 ;lea dx, [msg]
 ;mov ah, 09h
 ;int 21h
@@ -430,6 +637,8 @@ int 21h
 
 jumptoroipage:
     jmp roipage1
+jumptocalprofitpage:
+    jmp calc_profit_start
 donatePage:
 ; DISPLAY STRING
 mov ah, 09h
@@ -492,56 +701,329 @@ lea dx, buyMsg1
 int 21h
 
 ; convert to hexa
-add pricePerShirt, 30h
+;add pricePerShirt, 30h
 
 ; DISPLAY BYTE
     mov ah, 02h 
-    mov dl, pricePerShirt
+		mov al, pricePerShirt[0]
+		add al, 30h
+    mov dl, al
     int 21h
     
+	; DISPLAY BYTE
+    mov ah, 02h 
+    mov al, pricePerShirt[1]
+			add al, 30h
+
+    mov dl, al
+
+    int 21h
 ; convert to decimal
-sub pricePerShirt, 30h
+;sub pricePerShirt, 30h
+
+mov shirt_digit,0
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, buyMsg2
 int 21h
-; input
-mov ah, 01h
-int 21h
+ ;input quantity
+	MOV AH,0AH
+	LEA DX,shirt
+	INT 21H
 
+MOV AL,shirtData[0]
+	MOV shirt1,AL
+	MOV AL,shirtData[1]
+	MOV shirt2,AL
 mov shirtQuantity, al
+	CMP shirt1,'0'
+	JL error_msg_shirt
+	CMP shirt1,'9'
+	JG error_msg_shirt
+	INC shirt_digit
+	SUB shirt1,30H
+		
+	cmp shirt1[1], 13
+	je bypassValidateSecondNumShirt
+	SHIRT_VALIDATE_SECOND_NUM:
+	CMP shirt2,'0'
+	JL error_msg_shirt
+	CMP shirt2,'9'
+	JG error_msg_shirt
+	INC shirt_digit
+	SUB shirt2,30H	
+
+	bypassValidateSecondNumShirt:
+;New Line
+		MOV AH,02H
+		MOV DL,13
+		INT 21H
+		MOV DL,10
+		INT 21H
+
+	
+;-----either one or two digit-----
+	
+ checkForShirt:
+	CMP shirt_digit,1
+	JE one_digit_shirt
+	CMP shirt_digit,2
+	JE two_digit_shirt
+
+
+	
+	; Invalid input
+	error_msg_shirt:
+		MOV AH,09H
+		LEA DX,ERROR
+		INT 21H
+
+		;New Line
+		MOV AH,02H
+		MOV DL,13
+		INT 21H
+		MOV DL,10
+		INT 21H
+
+		JMP buyshirtpage
+	
+	
+	one_digit_shirt:
+		MOV AL,shirt1
+		MOV [shirtquantity],AL
+		JMP calcShirt
+
+
+	two_digit_shirt:
+		MOV AL,shirt1		
+		MUL TEN			;multiply QTY1	
+		ADD	AL,shirt2		;add QTY2 to QTY1
+		MOV shirtquantity,AL		;move final value to QTY
+		JMP calcShirt
+
 
 ; convert to decimal
 sub shirtQuantity, 30h
 
+calcShirt:
 ; multplication
 mov ax, 0
 mov al, shirtQuantity
 mul pricePerShirt
-mov shirtTotal, al
+mov shirtTotal, ax
 
-; convert to hexadecimal
-add shirtTotal, 30h
+; calculation for processing fee
+mul [[processingFeePercentage]]
+div	hundredDw
+mov [processingfee], ax
+mov processingFeeFP, dx
 
+;-------COST CALCULATION-------
+	
+	shirtTotalCalculation:
+		xor dx,dx
+		
+		MOV AX,0 		;clear AX
+			
+		MOV AX,[shirtTotal]	;dividend divede by divisor to find quotient and remainder
+		DIV THOUSAND			;reverse byte sequence : R1(AH) Q1(AL)
+		
+		MOV [sr1],dx		;store remainder to R1
+		MOV sq1,al		;store quotient to Q1
+		
+	
+		MOV AX,0		;clear AX
+				xor dx,dx
+
+		MOV ax,sr1		;dividend divede by divisor to find quotient and remainder
+		DIV HUNDRED			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		MOV sr2,AH		;store remainder to R2
+		MOV sq2,AL		;store quotient to Q2
+			
+		MOV AX,0		;clear AX
+				xor dx,dx
+
+		MOV AL,sr2		;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		
+			
+		MOV sr3,AH		;store remainder to R3
+		MOV sq3,AL		;store quotient to Q3
+			
+			
+			;;;; for displaying processing fee
+			mov ax,0
+			mov ax, [processingfee]
+			div [[hundredDw]]
+			mov pfq1, al
+			mov pfr1, dx
+			
+			mov ax,0
+			mov ax, pfr1
+			div [ten]
+			mov pfq2, al
+			mov pfr2, ah
+		
+			mov ax, 0
+			mov ax, [processingfeefp]
+			div [ten]
+			mov pfq3, al	
+			mov pfr3, ah
+			
+			;;;;;;;;;;;;;;
+			;;;;;;;;;;;;;;; total
+			mov ax, [processingfee]
+			add ax, [shirttotal]
+			mov [shirttotalwithpf], ax
+			xor dx,dx
+		
+		MOV AX,0 		;clear AX
+			
+		MOV AX,[shirttotalwithpf]	;dividend divede by divisor to find quotient and remainder
+		DIV THOUSAND			;reverse byte sequence : R1(AH) Q1(AL)
+		
+		MOV [str1],dx		;store remainder to R1
+		MOV stq1,al		;store quotient to Q1
+		
+	
+		MOV AX,0		;clear AX
+				xor dx,dx
+
+		MOV ax,str1		;dividend divede by divisor to find quotient and remainder
+		DIV HUNDRED			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		MOV str2,AH		;store remainder to R2
+		MOV stq2,AL		;store quotient to Q2
+			
+		MOV AX,0		;clear AX
+				xor dx,dx
+
+		MOV AL,str2		;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		
+			
+		MOV str3,AH		;store remainder to R3
+		MOV stq3,AL		;store quotient to Q3
+			
+
+			;;;;;;;;;;;;;;;;;;;
+		
+
+		ADD sq1,30H		;convert dec to hex
+		ADD sq2,30H
+		ADD sq3,30H
+		ADD sr3,30H
+
+		ADD stq1,30H		;convert dec to hex
+		ADD stq2,30H
+		ADD stq3,30H
+		ADD str3,30H
+		ADD pfq1, 30h
+		ADD pfq2, 30h
+		ADD pfr2, 30h
+		ADD pfq3, 30h
+		ADD pfr3, 30h
+		;ADD [pfpdigit] , 30h
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, [buymsg3]
 int 21h
-   ; DISPLAY BYTE
-    mov ah, 02h 
-    mov dl, shirtTotal
-    int 21h
-; DISPLAY STRING
-mov ah, 09h
-lea dx, [buymsg4]
-int 21h
+
+
+		MOV AH,02H
+		MOV DL,sq1
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,sq2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,sq3
+		INT 21H
+		MOV AH,02H
+		MOV DL,sr3
+		INT 21H
+
 ; NEW LINE
 mov ah, 02h
 mov dl, 0dh
 int 21h
 mov dl, 0ah
 int 21h
-jmp page2
+; DISPLAY STRING
+mov ah, 09h
+lea dx, [buymsg4]
+int 21h
+; DISPLAY BYTE
+mov ah, 02h
+mov dl, [pfpdigit]
+int 21h
+; DISPLAY STRING
+mov ah, 09h
+lea dx, [[buymsg5]]
+int 21h
+; display processing fee
+		MOV AH,02H	
+		MOV DL,pfq1
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,pfq2
+		INT 21H
+		MOV AH,02H
+		MOV DL,pfr2
+		INT 21H
+		MOV AH,02H
+		MOV DL, "."
+		INT 21H
+		MOV AH,02H
+		MOV DL, pfq3
+		INT 21H
+		MOV AH,02H
+		MOV DL, pfr3
+		INT 21H
+		
+; DISPLAY STRING
+mov ah, 09h
+lea dx, [[buymsg6]]
+int 21h
+
+; display total
+		
+		MOV AH,02H
+		MOV DL,stq1
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,stq2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,stq3
+		INT 21H
+		MOV AH,02H
+		MOV DL,str3
+		INT 21H
+		MOV DL, "."
+		INT 21H
+		MOV AH,02H
+		MOV DL, pfq3
+		INT 21H
+		MOV AH,02H
+		MOV DL, pfr3
+		INT 21H	
+
+
+; DISPLAY STRING
+mov ah, 09h
+lea dx, [buymsg7]
+int 21h
+			JMP page2
+
 
 
 roiPage1:
@@ -595,6 +1077,362 @@ lea dx, [roi]
 int 21h
 jmp page2
 
+	
+;-------QUANTITY-------
+
+calc_profit_START:
+		MOV digit,0		;reset digit
+
+ ;output MSG1
+	MOV AH,09H
+	LEA DX,MSG1
+	INT 21H	
+	
+ ;input quantity
+	MOV AH,0AH
+	LEA DX,quantity
+	INT 21H
+
+	MOV AL,qtydata[0]
+	MOV QTY1,AL
+	MOV AL,qtydata[1]
+	MOV QTY2,AL
+
+	CMP QTY1,'0'
+	JL error_msg
+	CMP QTY1,'9'
+	JG error_msg
+	INC digit
+	SUB QTY1,30H	;convert hex to dec for later calculation(can't sub before CMP, it will effect comparison)
+
+	cmp qtydata[1], 13
+	je bypassvalidatesecondnum
+
+	VALIDATE_SECOND_NUM:
+	CMP QTY2,'0'
+	JL error_msg
+	CMP QTY2,'9'
+	JG error_msg
+	INC digit
+
+	SUB QTY2,30H	;convert hex to dec for later calculation(can't sub before CMP, it will effect comparison)
+
+bypassValidateSecondNum:
+	;New Line
+		MOV AH,02H
+		MOV DL,13
+		INT 21H
+		MOV DL,10
+		INT 21H
+
+
+;-----either one or two digit-----
+	
+ check:
+	CMP digit,1
+	JE one_digit
+	CMP digit,2
+	JE two_digit
+
+
+	
+	; Invalid input
+	error_msg:
+		MOV AH,09H
+		LEA DX,ERROR
+		INT 21H
+
+		;New Line
+		MOV AH,02H
+		MOV DL,13
+		INT 21H
+		MOV DL,10
+		INT 21H
+
+		JMP calc_profit_START
+	
+	
+	one_digit:
+		MOV AL,QTY1
+		MOV QTY,AL
+		JMP input_cost
+
+
+	two_digit:
+		MOV AL,QTY1		
+		MUL TEN			;multiply QTY1	
+		ADD	AL,QTY2		;add QTY2 to QTY1
+		MOV QTY,AL		;move final value to QTY
+		JMP input_cost
+
+
+;--------COST---------
+	
+	input_cost:
+	;output MSG2
+		MOV AH,09H
+		LEA DX,MSG2
+		INT 21H
+
+	;input cost
+		MOV AH,01H
+		INT 21H
+		MOV cost,AL 	;move AL to cost
+
+	;validation
+		CMP cost,'0'
+		JL error_msg
+		CMP cost,'9'
+		JG error_msg
+
+		SUB cost,30H 	;convert hex to dec for later calculation
+
+
+;------------RETAIL PRICE-------------
+	input_price:
+	;output MSG3
+		MOV AH,09H
+		LEA DX,MSG3
+		INT 21H
+
+	;input price
+		MOV AH,01H
+		INT 21H
+		MOV price,AL	;move AL to price
+
+	;validation
+		CMP price,'0'
+		JL error_msg
+		CMP price,'9'
+		JG error_msg
+
+		SUB price,30H ;convert hex to dec for later calculation
+
+		
+
+;-------COST CALCULATION-------
+	
+	cost_calculation:
+
+		MOV AX,0 		;clear AX
+	
+		
+		MOV AL,QTY 		;move QTY to AL for arithmetic operation
+
+		MUL cost		;multiply with cost to produce total
+	
+		MOV TTL_cost,AX	;move the total to TTL
+		
+		MOV AX,0		;clear AX 
+		
+		MOV AX,TTL_cost	;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R1(AH) Q1(AL)
+		
+		MOV cR1,AH		;store remainder to R1
+		MOV cQ1,AL		;store quotient to Q1
+		
+		MOV AX,0		;clear AX
+		
+		MOV AL,cQ1		;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		MOV cR2,AH		;store remainder to R2
+		MOV cQ2,AL		;store quotient to Q2
+			
+
+		ADD cR1,30H		;convert dec to hex
+		ADD cR2,30H
+		ADD cQ2,30H
+
+	
+
+
+
+ ;-------retail price Calculation----------
+
+
+	retail_price_calculation:
+		MOV AX,0 		;clear AX
+	
+		
+		MOV AL,QTY 		;move QTY to AL for arithmetic operation
+
+		MUL price		;multiply with cost to produce total
+		
+		MOV TTL_price,AX;move the gross profit to TTL_price
+		
+		MOV AX,0		;clear AX 
+		
+		MOV AX,TTL_price;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R1(AH) Q1(AL)
+		
+		MOV pR1,AH		;store remainder to R1
+		MOV pQ1,AL		;store quotient to Q1
+		
+		MOV AX,0		;clear AX
+		
+		MOV AL,pQ1		;dividend divede by divisor to find quotient and remainder
+		DIV TEN			;reverse byte sequence : R2(AH) Q2(AL)
+		
+		MOV pR2,AH		;store remainder to R2
+		MOV pQ2,AL		;store quotient to Q2
+			
+
+		ADD pR1,30H		;convert dec to hex
+		ADD pR2,30H
+		ADD pQ2,30H
+
+
+;-------------Compare Retail Price greater than Cost----------------------
+
+	MOV AX,TTL_price
+	CMP AX,TTL_cost
+	JG profit_calculation
+	JL lost_calculation
+
+;----------NET PROFIT CALCULATION---------------
+
+	profit_calculation:
+		MOV AX,0			;clear AX
+
+		MOV AX,TTL_price
+		SUB AX,TTL_cost		;gross profit - cost
+		MOV PROFIT,AX	;move AL into NET_PROFIT
+
+		MOV AX,0  			;clear AX
+
+		MOV AX,PROFIT	;dividend divede by divisor to find quotient and remainder
+		DIV TEN
+
+		MOV nR1,AH		;store remainder to R1
+		MOV nQ1,AL		;store quotient to Q1
+
+		MOV AX,0
+
+		MOV AL,nQ1
+		DIV TEN
+
+		MOV nR2,AH		;store remainder to R2
+		MOV nQ2,AL		;store quotient to Q2
+
+		ADD nR1,30H		;convert dex to hex
+		ADD nR2,30H
+		ADD nQ2,30H
+
+		JMP display_result
+
+
+;----------TOTAL LOST CALCULAION---------------
+
+	lost_calculation:
+	MOV AX,0
+
+	MOV AX,TTL_cost
+	SUB AX,TTL_price
+	MOV LOST,AX
+
+	MOV AX,0
+
+	MOV AX,LOST
+	DIV TEN
+
+	MOV lR1,AH		;store remainder to R1
+	MOV lQ1,AL		;store quotient to Q1
+
+	MOV AX,0
+
+	MOV AL,lQ1
+	DIV TEN
+
+	MOV lR2,AH		;store remainder to R2
+	MOV lQ2,AL		;store quotient to Q2
+
+	ADD lR1,30H		;convert dex to hex
+	ADD lR2,30H
+	ADD lQ2,30H
+
+ ;-------OUTPUT--------
+ 
+ display_result:
+
+ ;output MSG4 (Total Cost)
+		MOV AH,09H		
+		LEA DX,MSG4
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,cQ2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,cR2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,cR1
+		INT 21H
+
+ ;output MSG5 (Total Gross Profit)
+		MOV AH,09H		
+		LEA DX,MSG5
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,pQ2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,pR2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,pR1
+		INT 21H
+
+	MOV AX,TTL_price
+	CMP AX,TTL_cost
+	JL lost_result
+
+ ;output MSG6 (Net Profit)
+	profit_result:
+		MOV AH,09H
+		LEA DX,MSG6
+		INT 21H
+
+		MOV AH,02H
+		MOV DL,nQ2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,nR2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,nR1
+		INT 21H
+
+		JMP page2
+
+ ;output MSG6 (Net Profit)
+	lost_result:
+		MOV AH,09H
+		LEA DX,MSG7
+		INT 21H
+
+		MOV AH,02H
+		MOV DL,lQ2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,lR2
+		INT 21H
+		
+		MOV AH,02H
+		MOV DL,lR1
+		INT 21H
+
+		JMP page2
+
 exit:
     ; DISPLAY STRING
 mov ah, 09h
@@ -608,4 +1446,17 @@ mov ah, 4ch
 int 21h
 
 main ENDP
+
+;Display Part
+DISP PROC
+MOV DL,BH      ; Since the values are in BX, BH Part
+ADD DL,30H     ; ASCII Adjustment
+MOV AH,02H     ; To Print in DOS
+INT 21H
+MOV DL,BL      ; BL Part 
+ADD DL,30H     ; ASCII Adjustment
+MOV AH,02H     ; To Print in DOS
+INT 21H
+RET
+DISP ENDP      ; End Disp Procedure
 END main
