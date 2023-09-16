@@ -1,4 +1,6 @@
-;;;;;;;;;;;;;;;;;;;;;MUST CREATE access.log FILE IN THE SAME DIRECTORY BEFORE RUNNING;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;MUST CREATE access.log FILE IN THE SAME DIRECTORY BEFORE RUNNING;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;running on jsdos TASM is recommeded for best experience;;;;;;;;;;;;;;;;;;;;;
+
 
 .model	small
 .stack 64
@@ -10,84 +12,111 @@
     buffer db 50 dup('$')
    ; username db 100 dup('$')
 
-    hr db 13,10,' -----------------------------------------$'   
+    hr db 13,10,' 		-----------------------------------------$'   
 
     inputPwd db 6 dup('$')
     correctPwd db '123456$'
 
-    welcomeScreen db ' -----------------------------------------$'
-    welcomeScreen2 db 13,10,'| WELCOME TO THE ENTREPRENEURSHIP SOCIETY |$'
-    welcomeScreen3 db 13,10,' -----------------------------------------$'   
-    menu0 db 13,10,'| 0.EXIT                                  |$'
+    welcomeScreen db			' 		 -----------------------------------------$'
+    welcomeScreen2 db 13,10,	'		| WELCOME TO THE ENTREPRENEURSHIP SOCIETY |$'
+    welcomeScreen3 db 13,10,	' 	 	 -----------------------------------------$'   
+    menu0 db 13,10,				'		| 0.EXIT                                  |$'
+    menu db 13,10,				'		| 1.REGISTER AS GUEST                     |$'
+    menu2 db 13,10,				'		| 2.LOGIN AS ADMIN                        |$' 
+    menu3 db 13,10,				' 		 -----------------------------------------$'
+    namePrompt db 13,10,		'PLEASE ENTER YOUR NAME:$'
+    passwordPrompt db 13,10,	'PLEASE ENTER PASSWORD (OBTAINED FROM ADMINISTRATOR):$'
+    firstChoice db ? , "$"
 
-    menu db 13,10,'| 1.REGISTER AS GUEST                     |$'
-    menu2 db 13,10,'| 2.LOGIN AS ADMIN                        |$' 
-    menu3 db 13,10,' -----------------------------------------$'
-    namePrompt db 13,10,'PLEASE ENTER YOUR NAME:$'
-    passwordPrompt db 13,10,'PLEASE ENTER PASSWORD (OBTAINED FROM ADMINISTRATOR):$'
-        firstChoice db ? , "$"
 
+    mainMenu db 			' 		 -----------------------------------------$'
+    mainMenu2 db 13,10,		'			WELCOME, $'
+    mainMenu3 db 			'!$'
+    mainMenu4 db 13,10, 	'		| 0.LOGOUT                                |$'
+    mainMenu5 db 13,10, 	'		| 1.DONATION                              |$' 
+    mainMenu6 db 13,10, 	'		| 2.BUY SOCIETY SHIRT                     |$' 
+    mainMenu7 db 13,10, 	'		| 3.PROFIT CALCULATOR                     |$' 
+    choicePrompt db 13,10,13,10,	'PLEASE ENTER YOUR CHOICE:$'
+    choice db ? , 			"$"
 
-    mainMenu db ' -----------------------------------------$'
-    mainMenu2 db 13,10,'WELCOME, $'
-    mainMenu3 db '!$'
-    mainMenu4 db 13,10,'| 0.LOGOUT                                |$'
-    mainMenu5 db 13,10,'| 1.DONATION                              |$' 
-    mainMenu6 db 13,10,'| 2.BUY SOCIETY SHIRT                     |$' 
-    mainMenu7 db 13,10,'| 3.PROFIT CALCULATOR                     |$' 
-    choicePrompt db 13,10,'PLEASE ENTER YOUR CHOICE:$'
-    choice db ? , "$"
+	loginMessage1 db 13,10,"		LOGGED IN SUCCESSFULLY AT $"
+	;loginMessage2 db 13,10," by$"
         
     donateMsg db 13,10,'YOU WILL EARN 1 POINT FOR EVERY RM5 OF DONATION$'
     donateMsg2 db 13,10,'PLEASE ENTER YOUR AMOUNT OF DONATION (RM):$'
-    donation db ?,"$"
-        shirtTotal dw ?
-
-    points db ?,"$" 
-
-    donateMsg3 db 13,10,'THANKS FOR DONATING! YOU HAVE DONATED A TOTAL OF RM$'
-    donateMsg4 db ' AND YOU WILL EARN $'
+	donateMsg3 db 13,10,'	THANKS FOR DONATING! YOU HAVE DONATED A TOTAL OF RM$'
+    donateMsg4 db 13,10,'			YOU WILL EARN $'
     donateMsg5 db ' POINTS!$'
+		valuePerPoint db 5
+		don1 db 0
+		don2 db 0
+		don3 db 0
+		don4 db 0
+		point1 db 0
+		point2 db 0
+		point3 db 0
+		point4 db 0
+		pQu1 db 0
+		pRe1 db 0
+		pQu2 db 0
+		pRe2 db 0
+		r1 db 0
+		r2 db 0
+		r3 db 0
+		don_digit db 0
+		
+		DDDDDDDD	label 	byte
+		dmax		db		5
+		dact		db		?
+		ddata		db		5 dup ("$")
 
-    valuePerPoint db 5
+
+
     
-        buyMsg1 db 13,10,'EVERY SHIRT COSTS RM$'
-        pricePerShirt db 90,'$'
-    buyMsg2 db 13,10,'PLEASE ENTER QUANTITY (MAX 99):$'
-	processingFeePercentage dw 6
-	PFPDigit db "6"
-	processingFee dw 0
-	processingFeeFP dw 0
-    shirtQuantity db ?,"$" 
-	shirtTotalWithPF dw 0
-	sq1 db 0
-	sr1 dw 0
-	sq2 db 0
-	sr2 db 0
-	sq3 db 0
-	sr3 db 0
-	sq4 db 0
-	sr4 db 0
-	
-	;; for total
-	stq1 db 0
-	str1 dw 0
-	stq2 db 0
-	str2 db 0
-	stq3 db 0
-	str3 db 0
-	stq4 db 0
-	str4 db 0
-	
-	
 
-    buyMsg3 db 13,10,'COST OF SHIRT: RM$'
-    buyMsg4 db 13,10,'PROCESSING FEE ($'
+    
+    shirtTotal dw ?
+	pricePerShirt db 90,'$'
+	buyMsg1 db 13,10,'EVERY SHIRT COSTS RM$'
+	buyMsg2 db 13,10,'PLEASE ENTER QUANTITY (MAX 99):$'
+	buyMsg3 db 13,10,'COST OF SHIRT: RM$'
+    buyMsg4 db 'PROCESSING FEE ($'
     buyMsg5 db '%): RM$'
-    buyMsg6 db 13,10,'THANKS FOR BUYING! IT WILL COST YOU RM$'
-    buyMsg7 db 'IN TOTAL! PLEASE PAY THIS AMOUNT TO THE BURSARY.$'
+    buyMsg6 db 13,10,13,10,'	THANKS FOR BUYING! IT WILL COST YOU RM$'
+    buyMsg7 db ' IN TOTAL!'
+			db 13,10,'		PLEASE PAY THIS AMOUNT TO THE BURSARY.$'
+		processingFeePercentage dw 6
+		PFPDigit db "6"
+		processingFee dw 0
+		processingFeeFP dw 0
+		shirtQuantity db ?,"$" 
+		shirtTotalWithPF dw 0
+			sq1 db 0
+			sr1 dw 0
+			sq2 db 0
+			sr2 db 0
+			sq3 db 0
+			sr3 db 0
+			sq4 db 0
+			sr4 db 0
+			rPPS db 0
+			qPPS db 0
+	
+			;; for total		
+			stq1 db 0
+			str1 dw 0
+			stq2 db 0
+			str2 db 0
+			stq3 db 0
+			str3 db 0
+			stq4 db 0
+			str4 db 0
 
-   
+			shirt		label	byte
+			shirtMax	db		3
+			shirtAct	db		0
+			shirtData	db		3 dup ("$")
+	 
     roiMsg1 db 13,10,'ENTER YOUR INVESTMENT GAIN (RM0 - RM10000):$'
     roiMsg2 db 13,10,'ENTER YOUR INVESTMENT COST (RM0 - RM10000):$'
     roiGain db 10 dup(0)
@@ -99,10 +128,12 @@
     hundred db 100
     hundredDw dw 100
     roi db ?
+
     array LABEL BYTE
     nameArrayMax db 50
     nameArrayAct db ?
     nameArrayData db 50 dup('$')
+
 	MSG1 db 13,10,"ENTER QUANTITY (UNIT)--> $"
 	MSG2 db 13,10,"ENTER COST PER UNIT --> RM$"
 	MSG3 db 13,10,"ENTER RETAIL PRICE PER UNIT --> RM$"
@@ -112,18 +143,12 @@
 	MSG7 db 13,10,13,10,"THE TOTAL LOST = -RM$"
 	ERROR db 13,10,"INVALID INPUT! PLEASE ENTER A NUMBER..$"
     
-	loginMessage1 db 13,10,"LOGGED IN SUCCESSFULLY AT $"
-	;loginMessage2 db 13,10," by$"
-
 	quantity	label	byte
 	max			db		3
 	act			db		0
 	qtydata		db		3 dup ("$")
 
-	shirt	label	byte
-	shirtMax			db		3
-	shirtAct			db		0
-	shirtData		db		3 dup ("$")
+	
 
 shirt_digit db 0
 	shirt1 db 0
@@ -141,7 +166,7 @@ shirt_digit db 0
 	cQ1 db 0
 	cR1 db 0
 	cQ2 db 0
-	cR2 db 0
+	cRe2 db 0
 	QTY1 db 0
 	QTY2 db 0
 	pQ1 db 0
@@ -170,6 +195,27 @@ main PROC
 	
 	mov ax, @data
 	mov ds, ax
+
+
+
+	; Set the video mode to 03h (text mode, 80x25)
+    MOV AH, 00h
+    MOV AL, 03h
+    INT 10h
+	
+    ; Set the cursor position (row = 0, column = 0)
+    MOV AH, 02h
+    MOV BH, 00h ; Page number
+    MOV DH, 00h ; Row
+    MOV DL, 0h ; Column
+    INT 10h
+
+    ; Set the background color for the entire screen
+    MOV AH, 09h
+    MOV AL, ' ' ; Space character
+    MOV CX, 2000 ; Number of characters (80 columns * 25 rows)
+    MOV BX, 000EH; pageNumber | Color
+    INT 10h
 
 welcomePage:
 
@@ -263,7 +309,7 @@ input:
 mov ah, 0ah
 lea dx, array
 int 21h
-jmp page2
+jmp displaylogindatetime
 
 wrongPasswordPage:
       ; DISPLAY STRING
@@ -325,7 +371,7 @@ adminPage:
     mov [namearraydata][4],"n"
         mov [namearraydata][5],13
 	mov [[nameArrayAct]], 5
-    jmp page2
+    jmp displaylogindatetime
 
 jumpToExit:
     jmp exit
@@ -339,14 +385,16 @@ int 21h
 jumpToWelcomePage2:
     jmp welcomepage
    
-    
-page2:
+
+displayLoginDateTime:
 ; NEW LINE
 mov ah, 02h
 mov dl, 0dh
 int 21h
+
 mov dl, 0ah
 int 21h
+
   mov ah, 09h
     lea dx, [[loginmessage1]]
     int 21h
@@ -354,6 +402,7 @@ int 21h
 DAY:
 MOV AH,2AH    ; To get System Date
 INT 21H
+
 MOV AL,DL     ; Day is in DL
 AAM
 MOV BX,AX
@@ -385,6 +434,10 @@ MOV AX,CX     ; since AAM is applicable only for AL (YYYY -> YY)
 AAM
 MOV BX,AX
 CALL DISP
+
+MOV AH,02H
+MOV DL," "
+INT 21H
 ;Hour Part
 HOUR:
 MOV AH,2CH    ; To get System Time
@@ -419,6 +472,9 @@ MOV AL,DH     ; Seconds is in DH
 AAM
 MOV BX,AX
 CALL DISP
+
+page2:
+
 
 ;;;;;; FILE HANDLING;;;;;;;
 ; CREATE A NEW FILE
@@ -484,21 +540,15 @@ inc cx
     ;mov dl, buffer[0]
     ;int 21h
 ; Write text
-mov ah, 40h
-mov bx, fhandle
-lea dx, buffer
-int 21h
+;mov ah, 40h
+;mov bx, fhandle
+;lea dx, buffer
+;int 21h
 ; close file
-mov ah, 3eh
-mov bx, fhandle
-int 21h
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; NEW LINE
-mov ah, 02h
-mov dl, 0dh
-int 21h
-mov dl, 0ah
-int 21h
+;mov ah, 3eh
+;mov bx, fhandle
+;int 21h
+
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, mainMenu2
@@ -598,14 +648,14 @@ je jumptocalprofitpage
 cmp choice, 0
 je jumptowelcomepage
 cmp choice, 2
-je buyShirtPage
+je jumpbuyShirtPage
 jne errorpage
 
     
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ; DISPLAY STRING
-;mov ah, 09h
+;mov ah, 09h1
 ;lea dx, menu
 ;int 21h
 
@@ -639,6 +689,10 @@ jumptoroipage:
     jmp roipage1
 jumptocalprofitpage:
     jmp calc_profit_start
+jumpbuyshirtpage:
+	jmp buyShirtPage
+
+
 donatePage:
 ; DISPLAY STRING
 mov ah, 09h
@@ -649,46 +703,217 @@ mov ah, 09h
 lea dx, donateMsg2
 int 21h
 ; input
-mov ah, 01h
+mov ah, 0AH
+LEA DX, DDDDDDDD
 int 21h
 
-mov donation, al
+MOV AX,0 
+MOV don_digit,0   
+MOV point1,0
+MOV point2,0
+MOV point3,0
+MOV point4,0
 
-; convert to decimal
-sub donation, 30h
+MOV AL, ddata[0]
+mov don1, AL
+MOV AL, ddata[1]
+mov don2, AL
+mov AL, ddata[2]
+mov don3, AL
+mov AL, ddata[3]
+mov don4, AL
 
-; division
-mov ax, 0
-mov al, donation
-div valuePerPoint
-mov points, al
+	CMP don1,'0'
+	JL donation_error_msg
+	CMP don1,'9'
+	JG donation_error_msg
+	inc don_digit
+	sub don1,30h
 
-; convert to hexadecimal
-add donation, 30h
-add points, 30h
+	cmp ddata[1],13
+	je bypassvalidation
+
+	CMP don2,'0'
+	JL donation_error_msg
+	CMP don2,'9'
+	JG donation_error_msg
+	inc don_digit
+	sub don2,30h
+
+	cmp ddata[2],13
+	je bypassvalidation
+
+	CMP don3,'0'
+	JL donation_error_msg
+	CMP don3,'9'
+	JG donation_error_msg
+	inc don_digit
+	sub don3,30h
+
+	cmp ddata[3],13
+	je bypassvalidation
+
+	CMP don4,'0'
+	JL donation_error_msg
+	CMP don4,'9'
+	JG donation_error_msg
+	inc don_digit
+	sub don4,30h
+	JMP bypassvalidation
+
+
+
+	donation_error_msg:
+	MOV AH,09H
+	LEA DX,ERROR
+	INT 21H
+
+	;New Line
+	MOV AH,02H
+	MOV DL,13
+	INT 21H
+	MOV DL,10
+	INT 21H
+	JMP donatePage
+
+bypassvalidation:
+	;New Line
+	MOV AH,02H
+	MOV DL,13
+	INT 21H
+	MOV DL,10
+	INT 21H
+
+checkDonationDigit: 
+ XOR AX,AX
+ 
+ CMP don_digit,1
+ JE ones
+ CMP don_digit,2
+ JE tenth
+ CMP don_digit,3
+ JE hundreds
+ CMP don_digit,4
+ JE donateDivision
+
+ ones:
+ MOV AL,don1
+ XCHG don4,AL
+ MOV don1,0
+ MOV don2,0  
+ MOV don3,0
+ JMP donateDivision
+
+ tenth:
+ MOV AL,don2
+ XCHG don4,AL
+ MOV don2,AL
+ 
+ MOV AL,don1
+ XCHG don3,AL
+ MOV don1,0
+ MOV don2,0
+ JMP donateDivision
+
+ hundreds:  
+ MOV AL,don3
+ XCHG don4,AL
+ MOV don3,AL
+              
+              
+ MOV AL,don2
+ XCHG don3,AL
+ MOV don2,AL
+ 
+ MOV AL,don1
+ XCHG don2,AL
+ MOV don1,0
+
+donateDivision:
+MOV AX,0
+MOV AL,don1		
+DIV valuePerPoint	;1.8
+MOV point1, AL		;1
+mov r1, ah			;4
+
+MOV AX,0        
+mov al, r1
+mul ten  			
+add al, don2		;49
+DIV valuePerPoint	;9
+mov point2, al		;9
+mov	r2, ah			;4
+
+MOV AX,0        
+mov al, r2
+mul ten  
+add al, don3		;49
+DIV valuePerPoint	
+mov point3, al		
+mov	r3, ah
+             
+            
+MOV AX,0        
+mov al, r3			
+mul ten  
+add al, don4		;49
+DIV valuePerPoint
+mov point4, al		;9
+
+
+
+
+
+;display sequence pQu1 pRe1 pQu2 pRe2
+
+add point1,30H
+add point2,30H
+add point3,30H
+add point4,30H
+
 
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, donateMsg3
 int 21h
    ; DISPLAY BYTE
-    mov ah, 02h 
-    mov dl, donation
-    int 21h
+
+MOV AH,02H
+MOV DL,ddata[0]
+INT 21H
+MOV AH,02H
+MOV DL,ddata[1]
+INT 21H
+MOV AH,02H
+MOV DL,ddata[2]
+INT 21H
+MOV AH,02H
+MOV DL,ddata[3]
+INT 21H
+
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, donateMsg4
 int 21h
 
 ; DISPLAY BYTE
-    mov ah, 02h 
-    mov dl, points
-    int 21h
+MOV AH,02h
+MOV DL,point1
+INT 21H
+MOV AH,02h
+MOV DL,point2
+INT 21H
+MOV AH,02h
+MOV DL,point3
+INT 21H
+MOV AH,02h
+MOV DL,point4
+INT 21H
 
 ; DISPLAY STRING
 mov ah, 09h
 lea dx, donateMsg5
-int 21h
+int 21h 
 jmp page2;
 
 beforeExit:
@@ -704,20 +929,23 @@ int 21h
 ;add pricePerShirt, 30h
 
 ; DISPLAY BYTE
-    mov ah, 02h 
-		mov al, pricePerShirt[0]
-		add al, 30h
-    mov dl, al
-    int 21h
     
-	; DISPLAY BYTE
-    mov ah, 02h 
-    mov al, pricePerShirt[1]
-			add al, 30h
+	XOR AX,AX
+	MOV AL,pricePerShirt ;90
+	DIV TEN
+	MOV rPPS, AH ;0
+	MOV qPPS, AL ;9
+	
+    add rPPS,30H
+	add qPPS,30H
+	
+	MOV AH,02h
+	MOV DL,qPPS
+	INT 21H
+	MOV AH,02h
+	MOV DL,rPPS
+	INT 21H
 
-    mov dl, al
-
-    int 21h
 ; convert to decimal
 ;sub pricePerShirt, 30h
 
@@ -1236,12 +1464,12 @@ bypassValidateSecondNum:
 		MOV AL,cQ1		;dividend divede by divisor to find quotient and remainder
 		DIV TEN			;reverse byte sequence : R2(AH) Q2(AL)
 		
-		MOV cR2,AH		;store remainder to R2
+		MOV cRe2,AH		;store remainder to R2
 		MOV cQ2,AL		;store quotient to Q2
 			
 
 		ADD cR1,30H		;convert dec to hex
-		ADD cR2,30H
+		ADD cRe2,30H
 		ADD cQ2,30H
 
 	
@@ -1365,7 +1593,7 @@ bypassValidateSecondNum:
 		INT 21H
 		
 		MOV AH,02H
-		MOV DL,cR2
+		MOV DL,cRe2
 		INT 21H
 		
 		MOV AH,02H
